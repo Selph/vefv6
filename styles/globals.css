@@ -7,10 +7,14 @@ body {
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  color: salmon;
+  text-decoration: underline;
 }
 
 * {
   box-sizing: border-box;
+}
+
+img {
+  height: 200px;
 }
