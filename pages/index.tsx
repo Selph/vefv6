@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { fetchFromPrismic } from '../api/prismic';
 import { asText } from '@prismicio/helpers';
 import { PrismicRichText } from '@prismicio/react'
+import { RTNode } from '@prismicio/types'
 
 type Homepage = {
   _meta: {

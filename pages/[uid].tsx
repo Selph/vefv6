@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { fetchFromPrismic } from '../api/prismic';
 import { asText, asImageSrc } from '@prismicio/helpers';
 import { PrismicRichText, PrismicImage } from '@prismicio/react'
+import { RTNode } from '@prismicio/types'
+import { Params } from 'next/dist/server/router';
 
 type Page = {
   _meta: {
@@ -86,7 +88,7 @@ type PrismicResponse = {
   };
 };
 
-export async function getServerSideProps({ params }) {
+export async function getServerSideProps({ params }: Params) {
   const { uid } = params;
   const result = await fetchFromPrismic<PrismicResponse>(query, { uid });
 
