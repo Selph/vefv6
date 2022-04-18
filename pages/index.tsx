@@ -1,26 +1,11 @@
 import Link from 'next/link';
-import { fetchFromPrismic } from '../api/prismic';
+import { fetchFromPrismic } from './api/prismic';
 import { asText } from '@prismicio/helpers';
-import { PrismicRichText } from '@prismicio/react'
-import { RTNode } from '@prismicio/types'
-
-type Homepage = {
-  _meta: {
-    uid: string;
-  };
-  title: [] | [RTNode, ...RTNode[]] | null | undefined;
-  intro: [] | [RTNode, ...RTNode[]] | null | undefined;
-};
-
-type Page = {
-  _meta: {
-    uid: string;
-  };
-  title: [] | [RTNode, ...RTNode[]] | null | undefined;
-  date: string;
-  image: string;
-  content: [] | [RTNode, ...RTNode[]] | null | undefined;
-};
+import { PrismicRichText } from '@prismicio/react';
+import { Query } from './api/query';
+import { Homepage, Page } from './api/types';
+import styles from '../styles/Home.module.css';
+import { stripVTControlCharacters } from 'util';
 
 type Props = {
   allPages: Array<{
@@ -43,15 +28,11 @@ function HomepageContainer({
       {homepage.map((item, i) => {
         return (
           <section key={i}>
-            <PrismicRichText field={item.node?.title} />
+            <p className={styles.title}>{asText(item.node?.title)}</p>
             <PrismicRichText field={item.node?.intro} />
           </section>
         );
       })}
-      <br></br>
-      <div>
-        <h3>Hlekkir á stöff:</h3>
-      </div>
     </ul>
   );
 }
@@ -65,6 +46,8 @@ function PagesContainer({
 }) {
   return (
     <ul>
+      <h3 className={styles.description}>Hlekkir á stöff:</h3>
+
       {page.map((item, i) => {
         const title = asText(item.node?.title);
         return (
@@ -79,56 +62,12 @@ function PagesContainer({
 
 export default function Home({ allPages, allHomepages }: Props) {
   return (
-    <section>
+    <section className={styles.main}>
       <HomepageContainer homepage={allHomepages ?? []} />
       <PagesContainer page={allPages ?? []} />
     </section>
   );
 }
-
-const query = `
-fragment page on Page {
-  _meta {
-    uid
-  }
-  title
-  content
-  date
-  image
-}
-
-query ($uid: String = "") {
-  page(uid: $uid, lang: "is") {
-    ...page
-  }
-  allPages(sortBy: date_DESC, first: 20) {
-    totalCount
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      startCursor
-      endCursor
-    }
-    edges {
-      cursor
-      node {
-        _meta {
-          uid
-        }
-        title
-      }
-    }
-  }
-  allHomepages {
-    edges {
-      node {
-        title
-        intro
-      }
-    }
-  }
-}
-`;
 
 type PrismicResponse = {
   page?: Page;
@@ -145,7 +84,7 @@ type PrismicResponse = {
 };
 
 export async function getServerSideProps() {
-  const result = await fetchFromPrismic<PrismicResponse>(query);
+  const result = await fetchFromPrismic<PrismicResponse>(Query);
 
   const allHomepages = result.allHomepages?.edges ?? [];
   const allPages = result.allPages?.edges ?? [];

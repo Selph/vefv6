@@ -14,8 +14,8 @@
     "@prismicio/react": "^2.3.0",
     "@prismicio/types": "^0.1.27",
     "next": "12.1.5",
-    "react": "18.0.0",
-    "react-dom": "18.0.0"
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   },
   "devDependencies": {
     "@types/node": "17.0.24",

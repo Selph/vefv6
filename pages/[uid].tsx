@@ -1,83 +1,55 @@
-import type { NextPage, GetServerSideProps } from 'next';
 import Link from 'next/link';
-import { fetchFromPrismic } from '../api/prismic';
-import { asText, asImageSrc } from '@prismicio/helpers';
-import { PrismicRichText, PrismicImage } from '@prismicio/react'
-import { RTNode } from '@prismicio/types'
+import styles from '../styles/Page.module.css';
+import { fetchFromPrismic } from './api/prismic';
+import { asText } from '@prismicio/helpers';
+import { PrismicRichText, PrismicImage } from '@prismicio/react';
 import { Params } from 'next/dist/server/router';
-
-type Page = {
-  _meta: {
-    uid: string;
-  };
-  title: [] | [RTNode, ...RTNode[]] | null | undefined;
-  date: string;
-  content: [] | [RTNode, ...RTNode[]] | null | undefined;
-  image: {
-    src: string;
-    url: string;
-    dimensions: {
-      height: number;
-      width: number;
-    };
-    copyright: string;
-    alt: string;
-  };
-};
+import { Query } from './api/query';
+import { Page, Slice } from './api/types';
+import AccordionSlice from '../slices/AccordionSlice';
+import ImageSlice from '../slices/ImageSlice';
+import TextSlice from '../slices/TextSlice';
+import EmbedSlice from '../slices/EmbedSlice';
+import Head from 'next/head';
 
 type Props = {
   page: Page | undefined;
 };
 
-export default function Home({ page }: Props) {
+function Slices({ data }: { data: Array<Slice> }) {
   return (
-    <section>
-      <h1>{asText(page?.title)}</h1>
-      <div>
-          <p>{page?.date}</p>
-          <PrismicRichText field={page?.content} />
-          <PrismicImage field={page?.image} />
-          <p>{page?.image.alt}</p>
-      </div>
-      <Link href='/'>Til baka</Link>
-    </section>
+    <div>
+      {data.map((parent, i) => {
+        if (parent.type === 'accordion') {
+          return <AccordionSlice data={parent} key={i} />;
+        } else if (parent.type === 'image') {
+          return <ImageSlice data={parent} key={i} />;
+        } else if (parent.type === 'content') {
+          return <TextSlice data={parent} key={i} />;
+        } else if (parent.type === 'embed') {
+          return <EmbedSlice data={parent} key={i} />;
+        }
+      })}
+    </div>
   );
 }
 
-const query = `
-fragment page on Page {
-    _meta {
-      uid
-    }
-    title
-    content
-    date
-    image
-  }
-  
-  query ($uid: String = "") {
-    page(uid: $uid, lang: "is") {
-      ...page
-    }
-    allPages(sortBy: date_DESC, first: 20) {
-      totalCount
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
-      edges {
-        cursor
-        node {
-          _meta {
-            uid
-          }
-        }
-      }
-    }
-  }
-`;
+export default function Home({ page }: Props) {
+  return (
+    <>
+      <Head>
+        <title>{asText(page?.title)}</title>
+      </Head>
+      <div className={styles.main}>
+        <PrismicRichText field={page?.title} />
+        <div className={styles.pageContent}>
+          {page?.body ? <Slices data={page.body} /> : null}
+        </div>
+      </div>
+      <Link href={'/'}>Til baka á forsíðu</Link>
+    </>
+  );
+}
 
 type PrismicResponse = {
   page?: Page;
@@ -90,15 +62,17 @@ type PrismicResponse = {
 
 export async function getServerSideProps({ params }: Params) {
   const { uid } = params;
-  const result = await fetchFromPrismic<PrismicResponse>(query, { uid });
+  const result = await fetchFromPrismic<PrismicResponse>(Query, { uid });
 
   const page = result.page ?? null;
 
+  console.log(page);
+
   if (!page) {
-      return {
-          notFound: true,
-          props: {}
-      }
+    return {
+      notFound: true,
+      props: {},
+    };
   }
 
   return {
